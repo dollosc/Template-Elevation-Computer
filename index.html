@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>降版高程計算 v2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f4f6fa;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+      text-align: center;
+    }
+
+    .section-title {
+      font-weight: 700;
+      margin: 16px 0 8px;
+      color: #333;
+      border-left: 4px solid #0072e3;
+      padding-left: 8px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d0d7e2;
+      padding: 6px 8px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #eef2f9;
+      font-weight: 600;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #c4c9d5;
+      font-size: 14px;
+    }
+
+    input[readonly] {
+      background: #f5f6fb;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #777;
+      line-height: 1.4;
+    }
+
+    .btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      background: #0072e3;
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      background: #d64545;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2f9;
+      font-size: 12px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .field {
+      flex: 1 1 140px;
+      min-width: 0;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .highlight {
+      color: #c00000;
+      font-weight: 600;
+    }
+
+    .card {
+      border-radius: 10px;
+      border: 1px solid #e0e4ef;
+      padding: 10px 10px 4px;
+      margin-bottom: 10px;
+      background: #fafbff;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .text-left {
+      text-align: left;
+    }
+
+    /* 讓表格在小螢幕可以橫向捲動 */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 24px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>樓板高程計算機</h1>
+
+    <!-- EL 區 -->
+    <div class="section-title">EL</div>
+    <div class="card">
+      <div class="card-title">輸入現場已知數據</div>
+      <div class="field-row">
+        <div class="field">
+          <label>B.M.（基準點高程，m）</label>
+          <input
+            type="number"
+            id="bmInput"
+            step="0.001"
+            placeholder="例如 75.455"
+          />
+        </div>
+        <div class="field">
+          <label>水準尺讀數（m）</label>
+          <input
+            type="number"
+            id="staffInput"
+            step="0.001"
+            placeholder="例如 1.355"
+          />
+        </div>
+        <div class="field">
+          <label>視準軸高程（m）＝ B.M. + 讀數</label>
+          <input
+            type="number"
+            id="instrumentHeight"
+            step="0.001"
+            readonly
+            placeholder="自動計算"
+          />
+        </div>
+      </div>
+      <div class="note">
+        範例：B.M. = <span class="highlight">75.455</span>，
+        水準尺讀數 = <span class="highlight">1.355</span>，
+        視準軸高程 = 75.455 + 1.355 = <span class="highlight">76.810</span>。
+      </div>
+    </div>
+
+    <!-- 樓層 & TYPE 設定 -->
+    <div class="section-title">樓層選擇與降版設定</div>
+
+    <div class="card">
+      <div class="card-title">1. 選擇樓層</div>
+      <div class="field-row">
+        <div class="field">
+          <label>樓層</label>
+          <select id="floorSelect">
+            <option value="">請選擇樓層</option>
+            <option value="LB2">LB2</option>
+            <option value="LB1">LB1</option>
+            <option value="GL">GL</option>
+            <option value="L10">L10</option>
+            <option value="L20">L20</option>
+            <option value="L30">L30</option>
+            <option value="L40">L40</option>
+            <option value="LRF">LRF</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>樓層高程（m）</label>
+          <input
+            type="number"
+            id="floorElevation"
+            readonly
+            placeholder="選擇樓層後自動顯示"
+          />
+        </div>
+      </div>
+      <div class="note">
+        樓層高程資料來源：下方「各樓板高程」資料庫表。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2. 設定降版 TYPE（以 cm 輸入）</div>
+      <div class="field-row" style="align-items: center;">
+        <div class="field" style="flex: 1 1 auto;">
+          <span class="note text-left">
+            只需輸入降版厚度（cm），例如：20、30。<br />
+            顯示時會自動變成「20版」「30版」。
+          </span>
+        </div>
+        <button class="btn" id="addTypeBtn" type="button">＋ 新增 TYPE</button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>TYPE 顯示名稱</th>
+              <th>降版厚度（cm）</th>
+              <th>刪除</th>
+            </tr>
+          </thead>
+          <tbody id="typeTableBody">
+            <!-- 由 JS 動態產生 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 計算結果 -->
+    <div class="section-title">計算結果</div>
+    <div class="card">
+      <div class="card-title">各 TYPE 設計高程與水準尺讀數</div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>TYPE</th>
+              <th>設計高程（m）</th>
+              <th>水準尺讀數（m）</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <!-- 由 JS 動態產生 -->
+          </tbody>
+        </table>
+      </div>
+      <div class="note text-left">
+        計算公式說明：<br />
+        1. 視準軸高程 = B.M. + 水準尺讀數（初始）<br />
+        2. 樓層高程 = 由資料庫表取得（例如 L20 = 82.15 m）<br />
+        3. 降版厚度（cm） → 轉換為 m：厚度(m) = 厚度(cm) ÷ 100<br />
+        4. 設計高程 = 樓層高程 − 降版厚度(m)<br />
+        5. 水準尺讀數 = 視準軸高程 − 設計高程
+      </div>
+    </div>
+
+    <!-- 樓板高程資料庫（放在最下方，手機往下滑就看得到） -->
+    <div class="section-title">各樓板高程（資料庫）</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>樓層</th>
+            <th>高程（m）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>LB2</td><td data-floor="LB2">65.400</td></tr>
+          <tr><td>LB1</td><td data-floor="LB1">69.150</td></tr>
+          <tr><td>GL</td><td data-floor="GL">74.000</td></tr>
+          <tr><td>L10</td><td data-floor="L10">75.200</td></tr>
+          <tr><td>L20</td><td data-floor="L20">82.150</td></tr>
+          <tr><td>L30</td><td data-floor="L30">88.600</td></tr>
+          <tr><td>L40</td><td data-floor="L40">98.600</td></tr>
+          <tr><td>LRF</td><td data-floor="LRF">107.100</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      ※ 若未來高程有變更，再麻煩私訊做修正，謝謝!
+    </div>
+  </div>
+
+  <script>
+    // 樓層高程資料庫（需與下方表格一致）
+    const floorData = {
+      LB2: 65.4,
+      LB1: 69.15,
+      GL: 74.0,
+      L10: 75.2,
+      L20: 82.15,
+      L30: 88.6,
+      L40: 98.6,
+      LRF: 107.1,
+    };
+
+    // TYPE 陣列：以 cm 為單位
+    let types = [
+      { id: 1, cm: 20 },
+      { id: 2, cm: 30 },
+    ];
+    let nextTypeId = 3;
+
+    const bmInput = document.getElementById("bmInput");
+    const staffInput = document.getElementById("staffInput");
+    const instrumentInput = document.getElementById("instrumentHeight");
+    const floorSelect = document.getElementById("floorSelect");
+    const floorElevationInput = document.getElementById("floorElevation");
+    const typeTableBody = document.getElementById("typeTableBody");
+    const resultBody = document.getElementById("resultBody");
+    const addTypeBtn = document.getElementById("addTypeBtn");
+
+    function toNum(value) {
+      const n = parseFloat(value);
+      return isNaN(n) ? null : n;
+    }
+
+    function fmt(n) {
+      return n.toFixed(3);
+    }
+
+    function calcInstrumentHeight() {
+      const bm = toNum(bmInput.value);
+      const s = toNum(staffInput.value);
+
+      if (bm === null || s === null) {
+        instrumentInput.value = "";
+        return null;
+      }
+
+      const ih = bm + s;
+      instrumentInput.value = fmt(ih);
+      return ih;
+    }
+
+    function updateFloorElevation() {
+      const key = floorSelect.value;
+      if (!key || floorData[key] === undefined) {
+        floorElevationInput.value = "";
+        return null;
+      }
+      const elev = floorData[key];
+      floorElevationInput.value = fmt(elev);
+      return elev;
+    }
+
+    function renderTypes() {
+      typeTableBody.innerHTML = "";
+      types.forEach((t) => {
+        const tr = document.createElement("tr");
+
+        // TYPE 顯示名稱
+        const tdName = document.createElement("td");
+        const label = document.createElement("span");
+        label.className = "chip";
+        label.textContent =
+          t.cm !== null && t.cm !== undefined && t.cm !== ""
+            ? `${t.cm}版`
+            : "—";
+        tdName.appendChild(label);
+
+        // 厚度輸入（cm）
+        const tdCm = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "1";
+        input.placeholder = "cm";
+        if (t.cm !== null && t.cm !== undefined) {
+          input.value = t.cm;
+        }
+        input.addEventListener("input", () => {
+          const val = toNum(input.value);
+          // 允許負數 / 空值，所以只要不是 NaN 就寫入；NaN 則保持 null
+          t.cm = val;
+          renderTypes(); // 更新 TYPE 顯示名稱
+          calcAndRender(); // 重新計算結果
+        });
+        tdCm.appendChild(input);
+
+        // 刪除按鈕
+        const tdDel = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-sm btn-danger";
+        btn.textContent = "刪除";
+        btn.addEventListener("click", () => {
+          types = types.filter((x) => x.id !== t.id);
+          renderTypes();
+          calcAndRender();
+        });
+        tdDel.appendChild(btn);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdCm);
+        tr.appendChild(tdDel);
+
+        typeTableBody.appendChild(tr);
+      });
+    }
+
+    function renderResults() {
+      resultBody.innerHTML = "";
+
+      const ih = toNum(instrumentInput.value);
+      const floorKey = floorSelect.value;
+      const floorElev =
+        floorKey && floorData[floorKey] !== undefined
+          ? floorData[floorKey]
+          : null;
+
+      types.forEach((t) => {
+        const tr = document.createElement("tr");
+        const tdType = document.createElement("td");
+        const tdDesign = document.createElement("td");
+        const tdStaff = document.createElement("td");
+
+        tdType.textContent =
+          t.cm !== null && t.cm !== undefined && t.cm !== ""
+            ? `${t.cm}版`
+            : "—";
+
+        if (ih === null || floorElev === null || t.cm === null) {
+          tdDesign.textContent = "—";
+          tdStaff.textContent = "—";
+        } else {
+          // cm → m
+          const dropM = t.cm / 100;
+          const designElev = floorElev - dropM;
+          const staffReading = ih - designElev;
+
+          tdDesign.textContent = fmt(designElev);
+          tdStaff.textContent = fmt(staffReading);
+        }
+
+        tr.appendChild(tdType);
+        tr.appendChild(tdDesign);
+        tr.appendChild(tdStaff);
+        resultBody.appendChild(tr);
+      });
+
+      // 若沒有任何 TYPE，顯示一列提示
+      if (types.length === 0) {
+        const trEmpty = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 3;
+        td.textContent = "目前沒有設定任何 TYPE，請先新增。";
+        trEmpty.appendChild(td);
+        resultBody.appendChild(trEmpty);
+      }
+    }
+
+    function calcAndRender() {
+      calcInstrumentHeight();
+      updateFloorElevation();
+      renderResults();
+    }
+
+    // 事件綁定
+    bmInput.addEventListener("input", calcAndRender);
+    staffInput.addEventListener("input", calcAndRender);
+    floorSelect.addEventListener("change", calcAndRender);
+
+    addTypeBtn.addEventListener("click", () => {
+      types.push({ id: nextTypeId++, cm: null });
+      renderTypes();
+      renderResults();
+    });
+
+    // 初始化
+    renderTypes();
+    renderResults();
+  </script>
+</body>
+</html>
